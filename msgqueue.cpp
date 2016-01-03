@@ -37,6 +37,7 @@ void MsgQueue::send(ID id, eventMsg* msg) {	//The send function takes an ID and 
 	tempItem.msg_ = msg;	//The message from the  sender is transferred to the message item.
 	mq -> push_back(tempItem);	//The message item is pushed to the message queue.
 	pthread_cond_signal(&notEmpty); //Other threads are signalled that the message queue is no longer empty.
+	cout << "Send function signals to waiting receive function" << endl;
 	pthread_mutex_unlock(&editMutex); //The edit mutex is released before exiting the routine.
 }
 
@@ -45,11 +46,10 @@ eventMsg * MsgQueue::receive(ID &id) {
 	pthread_mutex_lock(&editMutex);
 
 	while(numMsg == 0) {
-
 		pthread_cond_wait(&notEmpty, &editMutex);	//Same behaviour as above.
-
+		cout << "Thread waiting to recevie message" << endl;
 	}
-
+	cout << "Thread received message" << endl;
 	item tempItem = mq->front();	//The front item of the message queue is read.
 
 	eventMsg* tempMsg = tempItem.msg_;

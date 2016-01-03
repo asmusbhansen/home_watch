@@ -68,6 +68,7 @@ void* t2_func(void* _arg) {
 	{
 		cout << "Thread 2 waiting for message" << endl;
 		recvMsg = *handlerMq.receive(eventID);
+		cout << "Event ID: " << eventID << endl;
 		if(eventID == NEW_MESSAGE)
 		{
 			cout << "New message read from queue" << endl;
