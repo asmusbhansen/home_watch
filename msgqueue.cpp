@@ -4,12 +4,12 @@ using namespace std;
 
 MsgQueue::MsgQueue(int _maxSize) {
 
-	pthread_mutex_init(&editMutex, NULL);
-	pthread_cond_init(&notFull, NULL);
-	pthread_cond_init(&notEmpty, NULL);
+	pthread_mutex_init(&editMutex, 0);
+	pthread_cond_init(&notFull, 0);
+	pthread_cond_init(&notEmpty, 0);
 
-	mq = new std::deque<item>;
-	mq -> resize(_maxSize);
+	mq = new std::deque<Message>;
+	mq -> resize(0);
 	maxSize = _maxSize;
 	numMsg = 0;
 
@@ -18,46 +18,47 @@ MsgQueue::MsgQueue(int _maxSize) {
 MsgQueue::~MsgQueue() {
 
 	delete mq;	//The destructor deletes the message queue to avoid memory leak.
-
 }
 
-void MsgQueue::send(ID id, eventMsg* msg) {	//The send function takes an ID and message pointer as arguments.
+void MsgQueue::send(Message* _msg) {	//The send function takes the sender ID and message pointer(Message contains ).
 
 	pthread_mutex_lock(&editMutex);	//When a process is sending a message to the message queue, only that process can edit the queue.
-	cout << "Mutex locked by MsgQueue send function" << endl;
+	//cout << "Mutex locked by MsgQueue send function" << endl;
 	while(numMsg == maxSize) {
 
 		pthread_cond_wait(&notFull, &editMutex);	//If the queue is full, the process waits for signalling. Other processes can still work in the meantime.
 								//The mutex is unlocked for other processes to use, and is returned when the coditional wait is over.
 
 	}
-
-	item tempItem;
-	tempItem.senderID_ = id; //The message item is given the ID from the message to be sent.
-	tempItem.msg_ = msg;	//The message from the  sender is transferred to the message item.
-	mq -> push_back(tempItem);	//The message item is pushed to the message queue.
+	Message tempMsg = *_msg;
+	mq -> push_back(tempMsg);	//The message item is pushed to the message queue.
+	numMsg++;
 	pthread_cond_signal(&notEmpty); //Other threads are signalled that the message queue is no longer empty.
-	cout << "Send function signals to waiting receive function" << endl;
+	//cout << "Message sent with eID: " << tempMsg.eventID_ << " and pID : " << tempMsg.senderID_ << endl; 
 	pthread_mutex_unlock(&editMutex); //The edit mutex is released before exiting the routine.
 }
 
-eventMsg * MsgQueue::receive(ID &id) {
+Message MsgQueue::receive() {
 
 	pthread_mutex_lock(&editMutex);
 
 	while(numMsg == 0) {
 		pthread_cond_wait(&notEmpty, &editMutex);	//Same behaviour as above.
-		cout << "Thread waiting to recevie message" << endl;
 	}
-	cout << "Thread received message" << endl;
-	item tempItem = mq->front();	//The front item of the message queue is read.
 
-	eventMsg* tempMsg = tempItem.msg_;
-	id = tempItem.senderID_;
+	cout << "Thread received message" << endl;
+	Message tempMsg = mq->front();	//The front item of the message queue is read.
+	//cout << "Msg pointer taken from front of deque: " << mq->front().msg_ << endl;
+	cout << "Message read with eID: " << tempMsg.eventID_ << " and pID: " << tempMsg.senderID_ << endl;
+
+	//cout << "Process ID read by receive: " << tempItem.senderID_ << endl;
+	//id = tempItem.senderID_;
+
 	mq -> pop_front();	//The front item of the message queue is removed.
 	numMsg--;
 	pthread_cond_signal(&notFull);
 	pthread_mutex_unlock(&editMutex);
+	//cout << "Pointer returned from receive function: " << tempMsg << endl;
 	return tempMsg;
 
 }

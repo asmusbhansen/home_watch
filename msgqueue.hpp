@@ -2,11 +2,12 @@
 #include <deque>
 #include <pthread.h>
 
-enum ID{NEW_MESSAGE = 0, NO_NEW_MESSAGE = 1};
+enum PROCESS_ID{t1 = 0, t2 = 1};
+enum EVENT_ID{NO_NEW_MESSAGE = 0, NEW_MESSAGE = 1};
 
 class MsgQueue;
 
-
+/*
 //Define message class
 class Message {
 
@@ -19,15 +20,14 @@ public:
 //Since there is no need for private members of the class, it is just declared as a struct. 
 //The only difference between a struct and a class in C++ is that all members of a struct is declared as public by default.
 struct eventMsg: public Message {
-	eventMsg(int eventID = 0): eventID_(eventID){};	//The variable carID_ is initialized to cadID before the contructor is run.
-	int eventID_;
+	EVENT_ID eventID_;
 };
-
+*/
 //Declare a struct to handle message id and message pointer
-struct item {
+struct Message {
 
-	ID senderID_;
-	eventMsg* msg_;
+	PROCESS_ID senderID_;	//The sender ID, is the ID of the thread/process from where the message originates.
+	EVENT_ID eventID_; 	//The eventMsg struct only contains 
 };
 
 
@@ -36,11 +36,11 @@ class MsgQueue {
 public:
 	MsgQueue(int MaxSize = 100); //Class constructor, takes queue max size as argument.
 	~MsgQueue();
-	void send(ID id, eventMsg* msg = NULL);	//Function to send messages, taking sender id and message pointer as arguments.
-	eventMsg* receive(ID &id);	//Receive function, returns a message pointer, takes id reference as argument.
+	void send(Message * _msg);	//Function to send messages, taking sender id and message pointer as arguments.
+	Message receive();	//Receive function, returns a message pointer, takes id reference as argument.
 
 private:
-	std::deque<item>* mq;	//STL container double ended queue is used.
+	std::deque<Message>* mq;	//STL container double ended queue is used.
 	int maxSize, numMsg;
 	pthread_mutex_t editMutex;
 	pthread_cond_t notFull, notEmpty;

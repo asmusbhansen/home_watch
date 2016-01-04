@@ -26,52 +26,57 @@ int main(int argc, char **argv) {
 
 	//Waits for the treads to join.
 	pthread_join(t1, NULL);
+	cout << "Thread 1 done" << endl;
 	pthread_join(t2, NULL);
-
+	cout << "Thread 2 done" << endl;
 	return 0;
 }
 
 
 void* t1_func(void* _arg) {
 
-	//Message to t2
-	char message[] = {"Hello"};
-
-	ID tID = *(ID*)_arg;	//(int*) casts the void pointer to an integer pointer, the '*' then returns the value og the integer pointer.
+	PROCESS_ID pID = *(PROCESS_ID*)_arg;	//(int*) casts the void pointer to an integer pointer, the '*' then returns the value og the integer pointer.
 
 	cout << "Hello from thread: " << endl;
-	cout << tID << endl;
+	cout << pID << endl;
 
-	eventMsg sentMsg;
+	Message sentMsg;
 
 	sentMsg.eventID_ = NEW_MESSAGE;
+	sentMsg.senderID_ = pID;
 
 	cout << "Message sent from thread 1" << endl;
-	handlerMq.send(tID, &sentMsg);
-
-
+	handlerMq.send(&sentMsg);
 
 };
 
 void* t2_func(void* _arg) {
 
-	int tID = *(int*)_arg;
+	PROCESS_ID pID = *(PROCESS_ID*)_arg;
 
 	cout << "Hello from thread: " << endl;
-	cout << tID << endl;
+	cout << pID << endl;
 
-	eventMsg recvMsg;
+	Message recvMsg;
 
-	ID eventID;
-
-	while(1)
+	EVENT_ID eventID;
+	PROCESS_ID senderID;
+	while(eventID != 1)
 	{
 		cout << "Thread 2 waiting for message" << endl;
-		recvMsg = *handlerMq.receive(eventID);
-		cout << "Event ID: " << eventID << endl;
+		recvMsg = handlerMq.receive();
+		eventID = recvMsg.eventID_;
+		senderID = recvMsg.senderID_;
+		cout << "Message received from process: " << senderID << endl;
+		cout << "Message is: " << eventID << endl;
+
+		//cout << "returned pointer: " << handlerMq.receive(eventID) << endl;
+		//cout << "eventMsg pointer: " << recvMsg << endl;
+		//cout << "Event ID: " << eventID << endl;
+		//cout << "Expected event ID: " << NEW_MESSAGE << endl;
 		if(eventID == NEW_MESSAGE)
 		{
-			cout << "New message read from queue" << endl;
+			cout << "New message read from process: " << senderID  << endl;
 		}
 
 	}
