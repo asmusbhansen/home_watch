@@ -63,21 +63,12 @@ void* t2_func(void* _arg) {
 	PROCESS_ID senderID;
 	while(eventID != 1)
 	{
-		cout << "Thread 2 waiting for message" << endl;
-		recvMsg = handlerMq.receive();
-		eventID = recvMsg.eventID_;
-		senderID = recvMsg.senderID_;
-		cout << "Message received from process: " << senderID << endl;
-		cout << "Message is: " << eventID << endl;
 
-		//cout << "returned pointer: " << handlerMq.receive(eventID) << endl;
-		//cout << "eventMsg pointer: " << recvMsg << endl;
-		//cout << "Event ID: " << eventID << endl;
-		//cout << "Expected event ID: " << NEW_MESSAGE << endl;
-		if(eventID == NEW_MESSAGE)
-		{
-			cout << "New message read from process: " << senderID  << endl;
-		}
+	recvMsg = handlerMq.receive();
+	eventID = recvMsg.eventID_;
+	senderID = recvMsg.senderID_;
+	cout << "Message received from process: " << senderID << endl;
+	cout << "Message is: " << eventID << endl;
 
 	}
 
