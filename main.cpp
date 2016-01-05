@@ -1,12 +1,18 @@
 #include <iostream>
+#include <unistd.h>
 #include "msgqueue.hpp"
+#include "temp_sensor.hpp"
+
 
 using namespace std;
 
 void * t1_func(void*);
 void * t2_func(void*);
 
-MsgQueue handlerMq(10);
+MsgQueue tSensorMq(10);
+tempSensor tSensor("tSensor");
+
+
 
 int main(int argc, char **argv) {
 
@@ -35,18 +41,29 @@ int main(int argc, char **argv) {
 
 void* t1_func(void* _arg) {
 
+	//initialize temperature sensor
+	tSensor.initSensor();
+
 	PROCESS_ID pID = *(PROCESS_ID*)_arg;	//(int*) casts the void pointer to an integer pointer, the '*' then returns the value og the integer pointer.
 
 	cout << "Hello from thread: " << endl;
 	cout << pID << endl;
 
+	while(1)
+	{
+
+	tSensor.readSensor();
+
 	Message sentMsg;
 
-	sentMsg.eventID_ = NEW_MESSAGE;
+	sentMsg.eventID_ = NEW_TEMP_READING;
 	sentMsg.senderID_ = pID;
 
-	cout << "Message sent from thread 1" << endl;
-	handlerMq.send(&sentMsg);
+	cout << "Thread 1 has read the temperature sensor" << endl;
+	tSensorMq.send(&sentMsg);
+
+	usleep(1000000);
+	}
 
 };
 
@@ -61,15 +78,17 @@ void* t2_func(void* _arg) {
 
 	EVENT_ID eventID;
 	PROCESS_ID senderID;
-	while(eventID != 1)
-	{
 
-	recvMsg = handlerMq.receive();
+	while(1)
+	{
+	recvMsg = tSensorMq.receive();
 	eventID = recvMsg.eventID_;
 	senderID = recvMsg.senderID_;
 	cout << "Message received from process: " << senderID << endl;
-	cout << "Message is: " << eventID << endl;
-
+	if(eventID == 1)
+	{
+		cout << "New temp reading in log: " << tSensor.readFromLog() << " degrees celcius" << endl;
+	}
 	}
 
 };

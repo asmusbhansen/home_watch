@@ -5,8 +5,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
-#include <string> 
+#include <string>
 #include <unistd.h>
+
+#include "temp_sensor.hpp"
 
 #define MPU6050 0x68
 #define PWR_MGMT_1 0x6B
@@ -16,8 +18,7 @@
 
 using namespace std;
 
-int main(int argc, char **argv)	//argc is the number of arguments pointed to by the argument vector argv
-{
+int tempSensor::initSensor() {
 
 	int err = 0;	//Variable for storing error codes
 
@@ -86,11 +87,19 @@ int main(int argc, char **argv)	//argc is the number of arguments pointed to by 
 		exit(1);
 	}
 
+	fd_ = fd;
+
+	return 0;
+
+}
+
+int tempSensor::readSensor() {
+
+	int fd = fd_;
 	int temp_l, temp_h;
 	float real_temp, temp_var;
+	char buf[10];
 
-	while(1)
-	{
 	//Read temperature sensor
 	buf[0] = TEMP_H;
 	write(fd, buf, 1);
@@ -104,17 +113,15 @@ int main(int argc, char **argv)	//argc is the number of arguments pointed to by 
 
 	temp_l = buf[0];
 
+	//Convert reading to degres celcius
+
 	temp_var = (((temp_h * 256) + temp_l) - 65526);
-
 	real_temp = temp_var / 340;
-
 	real_temp = real_temp + 36.53;
 
-	printf("Temperature: %f\n", real_temp);
-	usleep(500000);
-	}
-	//printf("%d\n",temp_l);
-	//printf("%d\n",temp_h);
+	//Write temperature reading to log file
+	this->writeToLog(to_string(real_temp));
 
+	return real_temp;
 
 }

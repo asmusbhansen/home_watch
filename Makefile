@@ -5,4 +5,4 @@ EXE = main
 
 
 all:
-	$(CC) -g -lpthread -o $(EXE) $(SRC)
+	$(CC) -std=c++0x -g -lpthread -o $(EXE) $(SRC)

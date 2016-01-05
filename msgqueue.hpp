@@ -3,7 +3,7 @@
 #include <pthread.h>
 
 enum PROCESS_ID{t1 = 0, t2 = 1};
-enum EVENT_ID{NO_NEW_MESSAGE = 0, NEW_MESSAGE = 1};
+enum EVENT_ID{NO_NEW_MESSAGE = 0, NEW_TEMP_READING = 1};
 
 class MsgQueue;
 
