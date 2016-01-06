@@ -2,44 +2,39 @@
 #include <unistd.h>
 #include "msgqueue.hpp"
 #include "temp_sensor.hpp"
-
+#include "page_generator.hpp"
 
 using namespace std;
 
-void * t1_func(void*);
-void * t2_func(void*);
+void * tempReaderThreadFunction(void*);
+void * pageUpdaterThreadFunction(void*);
 
-MsgQueue tSensorMq(10);
+MsgQueue pageUpdaterMq(10);
 tempSensor tSensor("tSensor");
 
 
 
 int main(int argc, char **argv) {
 
-	pthread_t t1, t2;
+	pthread_t tempReaderThread, pageUpdaterThread;
 	int tID[2] = {1, 2};
 
-	if( 0 > pthread_create(&t1, NULL, &t1_func, (void*)&tID[0]))
+	if( 0 > pthread_create(&tempReaderThread, NULL, &tempReaderThreadFunction, (void*)&tID[0]))
 	{
 		cout << "Thread 1 creation failed" << endl;
 		while(1);
 	}
-	if( 0 > pthread_create(&t2, NULL, &t2_func, (void*)&tID[1]))
+	if( 0 > pthread_create(&pageUpdaterThread, NULL, &pageUpdaterThreadFunction, (void*)&tID[1]))
 	{
 		cout << "Thread 2 creation failed" << endl;
 		while(1);
 	}
 
-	//Waits for the treads to join.
-	pthread_join(t1, NULL);
-	cout << "Thread 1 done" << endl;
-	pthread_join(t2, NULL);
-	cout << "Thread 2 done" << endl;
-	return 0;
+	while(1);
 }
 
 
-void* t1_func(void* _arg) {
+void* tempReaderThreadFunction(void* _arg) {
 
 	//initialize temperature sensor
 	tSensor.initSensor();
@@ -59,15 +54,15 @@ void* t1_func(void* _arg) {
 	sentMsg.eventID_ = NEW_TEMP_READING;
 	sentMsg.senderID_ = pID;
 
-	cout << "Thread 1 has read the temperature sensor" << endl;
-	tSensorMq.send(&sentMsg);
+	//cout << "Thread 1 has read the temperature sensor" << endl;
+	pageUpdaterMq.send(&sentMsg);
 
 	usleep(1000000);
 	}
 
 };
 
-void* t2_func(void* _arg) {
+void* pageUpdaterThreadFunction(void* _arg) {
 
 	PROCESS_ID pID = *(PROCESS_ID*)_arg;
 
@@ -81,14 +76,18 @@ void* t2_func(void* _arg) {
 
 	while(1)
 	{
-	recvMsg = tSensorMq.receive();
+	recvMsg = pageUpdaterMq.receive();
 	eventID = recvMsg.eventID_;
 	senderID = recvMsg.senderID_;
-	cout << "Message received from process: " << senderID << endl;
+	//cout << "Message received from process: " << senderID << endl;
+	string temperatureReading = tSensor.readFromLog();
 	if(eventID == 1)
 	{
-		cout << "New temp reading in log: " << tSensor.readFromLog() << " degrees celcius" << endl;
+		cout << "New temp reading in log: " << temperatureReading << " degrees celcius" << endl;
 	}
+
+	pageGenerator(temperatureReading);
+	cout << "Reading written to homepage" << endl;
 	}
 
 };
